@@ -153,7 +153,6 @@ function confirmCancel(record) {
         if (isCurrentContext(originalContext)) await loadMaintenance()
       } catch (err) {
         message.error(err.message)
-        throw err
       } finally {
         cancelling.value = false
       }
