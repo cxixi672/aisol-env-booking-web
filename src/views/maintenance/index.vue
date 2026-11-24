@@ -7,13 +7,8 @@ import { newIdempotencyKey } from '@/utils/idempotency'
 
 const context = useAppStore()
 const canManage = computed(() => context.user === 'admin')
-const today = new Date()
-const tomorrow = new Date(today)
-tomorrow.setUTCDate(today.getUTCDate() + 1)
-const filters = reactive({
-  start: today.toISOString().slice(0, 10) + 'T00:00:00Z',
-  end: tomorrow.toISOString().slice(0, 10) + 'T00:00:00Z',
-})
+const rangeStorageKey = 'maintenance.query'
+const filters = reactive(initialRange())
 const activeRange = ref({ ...filters })
 const rows = ref([])
 const loading = ref(false)
@@ -21,6 +16,8 @@ const filterError = ref('')
 const listError = ref('')
 const cancelling = ref(false)
 const columns = [
+  { title: '维护编号', dataIndex: 'id' },
+  { title: '环境', dataIndex: 'env' },
   { title: '开始时间 (UTC)', dataIndex: 'start' },
   { title: '结束时间 (UTC)', dataIndex: 'end' },
   { title: '创建人', dataIndex: 'user' },
@@ -33,7 +30,7 @@ const draft = reactive({ start: '', end: '' })
 const creating = ref(false)
 const createError = ref('')
 let createContext
-let attempt
+const submissionKeys = new Map()
 let listVersion = 0
 
 function isUtcTimestamp(value) {
@@ -46,6 +43,28 @@ function validateRange({ start, end }) {
   if (!isUtcTimestamp(start) || !isUtcTimestamp(end)) return '请输入 UTC 时间，格式为 YYYY-MM-DDTHH:mm:ssZ。'
   if (start >= end) return '结束时间必须晚于开始时间。'
   return ''
+}
+
+function initialRange() {
+  try {
+    const saved = JSON.parse(sessionStorage.getItem(rangeStorageKey))
+    if (saved && !validateRange(saved)) return saved
+  } catch {
+    // Fall back to the current UTC day if the saved range is unreadable.
+  }
+  const today = new Date()
+  const tomorrow = new Date(today)
+  tomorrow.setUTCDate(today.getUTCDate() + 1)
+  return {
+    start: today.toISOString().slice(0, 10) + 'T00:00:00Z',
+    end: tomorrow.toISOString().slice(0, 10) + 'T00:00:00Z',
+  }
+}
+
+function applyRange(range) {
+  Object.assign(filters, range)
+  activeRange.value = range
+  sessionStorage.setItem(rangeStorageKey, JSON.stringify(range))
 }
 
 async function loadMaintenance() {
@@ -67,7 +86,7 @@ function search() {
   const range = { start: filters.start.trim(), end: filters.end.trim() }
   filterError.value = validateRange(range)
   if (filterError.value) return
-  activeRange.value = range
+  applyRange(range)
   return loadMaintenance()
 }
 
@@ -89,15 +108,22 @@ async function submitCreate() {
   if (createError.value) return
 
   const signature = JSON.stringify([createContext.user, data])
-  if (attempt?.signature !== signature) attempt = { signature, key: newIdempotencyKey() }
+  if (!submissionKeys.has(signature)) submissionKeys.set(signature, newIdempotencyKey())
 
   creating.value = true
   try {
-    await createMaintenance(data, attempt.key)
-    attempt = undefined
+    const res = await createMaintenance(data, submissionKeys.get(signature))
+    submissionKeys.delete(signature)
     createOpen.value = false
-    message.success('维护窗口已创建')
-    if (isCurrentContext(createContext)) await loadMaintenance()
+    message.success(`维护窗口已创建 · 编号 ${res.data.id}`)
+    if (isCurrentContext(createContext)) {
+      const { start, end } = data
+      if (start >= activeRange.value.end || end <= activeRange.value.start) {
+        filterError.value = ''
+        applyRange({ start, end })
+      }
+      await loadMaintenance()
+    }
   } catch (err) {
     if (isCurrentContext(createContext)) {
       createError.value = err.message
@@ -142,11 +168,11 @@ watch(() => [context.env, context.user], () => {
 </script>
 
 <template>
-  <a-card title="维护窗口">
-    <template #extra>
-      <a-button v-if="canManage" type="primary" @click="openCreate">创建维护</a-button>
-    </template>
-
+  <div class="maintenance-heading">
+    <h1>维护窗口</h1>
+    <a-button v-if="canManage" type="primary" :disabled="creating" @click="openCreate">创建维护</a-button>
+  </div>
+  <a-card>
     <a-form layout="inline" class="maintenance-filters" @finish="search">
       <a-form-item label="开始时间 (UTC)" html-for="maintenance-filter-start">
         <a-input id="maintenance-filter-start" v-model:value="filters.start" />
@@ -166,8 +192,9 @@ watch(() => [context.env, context.user], () => {
       :data-source="rows"
       :loading="loading"
       :pagination="false"
+      :scroll="{ x: 690 }"
       row-key="id"
-      :locale="{ emptyText: '该时段暂无维护窗口' }"
+      :locale="{ emptyText: listError ? '维护列表加载失败' : '该时段暂无维护窗口' }"
     >
       <template #bodyCell="{ column, record }">
         <a-button
@@ -206,6 +233,19 @@ watch(() => [context.env, context.user], () => {
 </template>
 
 <style scoped>
+.maintenance-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.maintenance-heading h1 {
+  margin: 0;
+  font-size: 24px;
+}
+
 .maintenance-filters {
   row-gap: 12px;
   margin-bottom: 16px;
