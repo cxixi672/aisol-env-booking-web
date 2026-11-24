@@ -3,17 +3,20 @@ import { useAppStore } from '@/stores/app'
 
 const client = axios.create({ baseURL: import.meta.env.VITE_API_PREFIX || '/api', timeout: 30000 })
 
+export class BusinessResponseError extends Error {
+  constructor(code, desc) {
+    super(typeof desc === 'string' && desc.trim() ? desc : '请求失败')
+    this.code = code
+  }
+}
+
 client.interceptors.response.use(response => {
   const result = response.data
-  if (result?.code === '000000') return result
-  const error = new Error(result?.desc || result?.message || '请求失败')
-  error.code = result?.code
-  throw error
-}, error => {
-  const result = error.response?.data
-  if (result?.desc) error.message = result.desc
-  if (result?.code) error.code = result.code
-  return Promise.reject(error)
+  if (typeof result?.code !== 'string' || !result.code.trim()) {
+    throw new Error('服务响应格式错误')
+  }
+  if (result.code === '000000') return result
+  throw new BusinessResponseError(result.code, result.desc)
 })
 
 export const useAxios = config => client.request({

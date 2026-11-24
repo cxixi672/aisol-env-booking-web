@@ -2,7 +2,7 @@
 import { reactive, ref, watch } from 'vue'
 import { cancelBooking, createBooking, listBookings } from '@/api/bookings'
 import { useAppStore } from '@/stores/app'
-import { newIdempotencyKey } from '@/utils/idempotency'
+import { createIdempotentSubmission } from '@/utils/idempotency'
 
 const app = useAppStore()
 const rangeStorageKey = 'booking.query'
@@ -58,7 +58,7 @@ const draft = reactive({ start: '', end: '' })
 const draftError = ref('')
 const submitting = ref(false)
 const cancellingId = ref(null)
-const submissionKeys = new Map()
+const submitBookingRequest = createIdempotentSubmission(createBooking)
 const rangeError = '请填写有效的 UTC 起止时间，结束时间须晚于开始时间。'
 let queryVersion = 0
 let contextVersion = 0
@@ -108,7 +108,6 @@ function openCreate() {
   draft.start = activeRange.value.start.slice(0, -1)
   draft.end = activeRange.value.end.slice(0, -1)
   draftError.value = ''
-  submissionKeys.clear()
   dialogOpen.value = true
 }
 
@@ -120,13 +119,10 @@ async function submitBooking() {
   if (!range) return
 
   const payload = { env: app.env, ...range }
-  const signature = JSON.stringify(payload)
-  if (!submissionKeys.has(signature)) submissionKeys.set(signature, newIdempotencyKey())
-
   const version = contextVersion
   submitting.value = true
   try {
-    const res = await createBooking(payload, submissionKeys.get(signature))
+    const res = await submitBookingRequest(app.user, payload)
     if (version !== contextVersion) return
 
     dialogOpen.value = false

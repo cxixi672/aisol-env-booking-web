@@ -2,7 +2,7 @@
 import { onScopeDispose, reactive, ref, watch } from 'vue'
 import { createWaitlist, listWaitlist } from '@/api/waitlist'
 import { useAppStore } from '@/stores/app'
-import { newIdempotencyKey } from '@/utils/idempotency'
+import { createIdempotentSubmission } from '@/utils/idempotency'
 
 defineOptions({ name: 'Waitlist' })
 
@@ -20,7 +20,7 @@ const submitting = ref(false)
 const formError = ref('')
 const queryError = ref('')
 const success = ref('')
-const pendingKeys = new Map()
+const submitWaitlistRequest = createIdempotentSubmission(createWaitlist)
 let queryVersion = 0
 let contextVersion = 0
 
@@ -87,21 +87,14 @@ async function submit() {
   const slot = readSlot()
   if (!slot) return
 
-  const user = app.user
   const version = contextVersion
-  const request = JSON.stringify([user, slot.env, slot.start, slot.end])
-  const key = pendingKeys.get(request) ?? newIdempotencyKey()
-  pendingKeys.set(request, key)
   submitting.value = true
   try {
-    await createWaitlist(slot, key)
-    pendingKeys.delete(request)
+    await submitWaitlistRequest(app.user, slot)
     if (version !== contextVersion) return
     success.value = '已加入候补队列。'
     await loadWaitlist(slot)
   } catch (error) {
-    const status = error.response?.status
-    if (status >= 400 && status < 500) pendingKeys.delete(request)
     if (version === contextVersion) formError.value = error.message
   } finally {
     submitting.value = false

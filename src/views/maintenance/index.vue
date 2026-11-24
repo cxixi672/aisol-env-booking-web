@@ -3,7 +3,7 @@ import { computed, reactive, ref, watch } from 'vue'
 import { message, Modal } from 'ant-design-vue'
 import { cancelMaintenance, createMaintenance, listMaintenance } from '@/api/maintenance'
 import { useAppStore } from '@/stores/app'
-import { newIdempotencyKey } from '@/utils/idempotency'
+import { createIdempotentSubmission } from '@/utils/idempotency'
 
 const context = useAppStore()
 const canManage = computed(() => context.user === 'admin')
@@ -30,7 +30,7 @@ const draft = reactive({ start: '', end: '' })
 const creating = ref(false)
 const createError = ref('')
 let createContext
-const submissionKeys = new Map()
+const submitMaintenanceRequest = createIdempotentSubmission(createMaintenance)
 let listVersion = 0
 
 function isUtcTimestamp(value) {
@@ -107,13 +107,9 @@ async function submitCreate() {
   createError.value = validateRange(data)
   if (createError.value) return
 
-  const signature = JSON.stringify([createContext.user, data])
-  if (!submissionKeys.has(signature)) submissionKeys.set(signature, newIdempotencyKey())
-
   creating.value = true
   try {
-    const res = await createMaintenance(data, submissionKeys.get(signature))
-    submissionKeys.delete(signature)
+    const res = await submitMaintenanceRequest(createContext.user, data)
     createOpen.value = false
     message.success(`维护窗口已创建 · 编号 ${res.data.id}`)
     if (isCurrentContext(createContext)) {
