@@ -16,7 +16,7 @@ export default defineConfig(({ mode }) => {
     base: env.VITE_APP_BASE || '/aisol-env-booking-web/',
     plugins: [vue()],
     resolve: { alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) } },
-    server: { proxy },
+    server: { host: '127.0.0.1', proxy },
     build: { outDir: 'dist', assetsDir: 'static' },
   }
 })
