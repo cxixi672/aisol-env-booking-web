@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { useAppStore } from '@/stores/app'
 
 const client = axios.create({ baseURL: import.meta.env.VITE_API_PREFIX || '/api', timeout: 30000 })
 
@@ -11,7 +12,11 @@ client.interceptors.response.use(response => {
 }, error => {
   const result = error.response?.data
   if (result?.desc) error.message = result.desc
+  if (result?.code) error.code = result.code
   return Promise.reject(error)
 })
 
-export const useAxios = config => client.request(config)
+export const useAxios = config => client.request({
+  ...config,
+  headers: { 'X-User': useAppStore().user, ...config.headers },
+})

@@ -1,7 +1,17 @@
 :root {
   --app-page-bg: #f5f6f8;
+  --app-panel-bg: #fff;
+  --app-border: #e0e6ef;
+  --app-text: #34445a;
+  --app-accent: #1559be;
   --app-header-bg: #172536;
   --app-header-text: #fff;
 }
 
-:root[data-theme='dark'] { --app-page-bg: #141414; }
+:root[data-theme='dark'] {
+  --app-page-bg: #141414;
+  --app-panel-bg: #1f1f1f;
+  --app-border: #303030;
+  --app-text: #d5d5d5;
+  --app-accent: #8bbdff;
+}
