@@ -1,0 +1,7 @@
+:root {
+  --app-page-bg: #f5f6f8;
+  --app-header-bg: #172536;
+  --app-header-text: #fff;
+}
+
+:root[data-theme='dark'] { --app-page-bg: #141414; }
