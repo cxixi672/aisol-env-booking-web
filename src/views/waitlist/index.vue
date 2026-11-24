@@ -129,7 +129,7 @@ onScopeDispose(() => {
   <div class="waitlist-page">
     <h1>候补与递补</h1>
     <a-card>
-      <a-form layout="vertical" @finish="submit">
+      <a-form :model="draft" layout="vertical" @finish="submit">
         <div class="waitlist-range">
           <a-form-item label="开始时间 (UTC)" html-for="waitlist-start">
             <a-input
