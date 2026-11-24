@@ -172,7 +172,7 @@ watch(() => [context.env, context.user], () => {
     <a-button v-if="canManage" type="primary" :disabled="creating" @click="openCreate">创建维护</a-button>
   </div>
   <a-card>
-    <a-form layout="inline" class="maintenance-filters" @finish="search">
+    <a-form :model="filters" layout="inline" class="maintenance-filters" @finish="search">
       <a-form-item label="开始时间 (UTC)" html-for="maintenance-filter-start">
         <a-input id="maintenance-filter-start" v-model:value="filters.start" />
       </a-form-item>
