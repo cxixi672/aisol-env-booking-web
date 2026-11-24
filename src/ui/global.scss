@@ -1,4 +1,4 @@
 body { margin: 0; }
 .app-layout { min-height: 100vh; background: var(--app-page-bg); }
 .app-header { color: var(--app-header-text); background: var(--app-header-bg); }
-.app-content { width: min(100%, 72rem); margin: 0 auto; padding: 24px; }
+.app-content { width: min(100%, 72rem); margin: 0 auto; padding: 24px; color: var(--app-text); }
