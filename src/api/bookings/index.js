@@ -10,7 +10,7 @@ export function createBooking(data, user, key) {
   return useAxios({ url: '/bookings/create', data, user, key })
 }
 
-/** Cancel the record identified by a numeric JSON body. */
+/** Cancel the record with an int64 ID field in the JSON body. */
 export function cancelBooking(id, user) {
   return useAxios({ url: '/bookings/cancel', data: decimalIdBody(id), user })
 }

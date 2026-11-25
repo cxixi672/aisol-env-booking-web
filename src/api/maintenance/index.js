@@ -10,7 +10,7 @@ export function createMaintenance(data, user, key) {
   return useAxios({ url: '/maintenance/create', data, user, key })
 }
 
-/** Cancel the record identified by a numeric JSON body. */
+/** Cancel the record with an int64 ID field in the JSON body. */
 export function cancelMaintenance(id, user) {
   return useAxios({ url: '/maintenance/cancel', data: decimalIdBody(id), user })
 }

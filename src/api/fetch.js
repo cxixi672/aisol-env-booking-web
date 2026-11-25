@@ -25,8 +25,13 @@ export function useAxios({ url, data, user, key, signal }) {
 }
 
 export function decimalIdBody(id) {
-  // The server returns int64 IDs as strings. Keep every digit in the JSON number.
+  if (typeof id !== 'string' && typeof id !== 'bigint' && !Number.isSafeInteger(id)) {
+    throw new Error('记录编号无效')
+  }
   const digits = String(id)
-  if (!/^[1-9][0-9]*$/.test(digits)) throw new Error('记录编号无效')
-  return digits
+  if (!/^[1-9][0-9]{0,18}$/.test(digits) || BigInt(digits) > 9_223_372_036_854_775_807n) {
+    throw new Error('记录编号无效')
+  }
+  // Axios preserves valid JSON text. Keep the server's string ID exact on the wire.
+  return `{"id":${digits}}`
 }
