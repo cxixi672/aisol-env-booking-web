@@ -1,18 +1,16 @@
-import { useAxios } from '@/api/fetch'
+import { decimalIdBody, useAxios } from '@/api/fetch'
 
-export function listMaintenance(params) {
-  return useAxios({ url: '/maintenance', method: 'get', params })
+/** Load records for an environment and UTC interval as the selected user. */
+export function listMaintenance(data, user, signal) {
+  return useAxios({ url: '/maintenance/list', data, user, signal })
 }
 
-export function createMaintenance(data, key) {
-  return useAxios({
-    url: '/maintenance',
-    method: 'post',
-    data,
-    headers: { 'Idempotency-Key': key },
-  })
+/** Create a record with the key assigned to this user and interval. */
+export function createMaintenance(data, user, key) {
+  return useAxios({ url: '/maintenance/create', data, user, key })
 }
 
-export function cancelMaintenance(id) {
-  return useAxios({ url: `/maintenance/${encodeURIComponent(id)}`, method: 'delete' })
+/** Cancel the record identified by a numeric JSON body. */
+export function cancelMaintenance(id, user) {
+  return useAxios({ url: '/maintenance/cancel', data: decimalIdBody(id), user })
 }

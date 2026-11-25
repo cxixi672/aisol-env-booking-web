@@ -18,22 +18,27 @@ function newIdempotencyKey() {
 }
 
 export function createIdempotentSubmission(submit) {
-  const pendingKeys = new Map()
+  const pending = new Map()
 
-  return async (user, payload) => {
+  return (user, payload) => {
     const signature = JSON.stringify([user, payload.env, payload.start, payload.end])
-    const key = pendingKeys.get(signature) ?? newIdempotencyKey()
-    pendingKeys.set(signature, key)
+    const attempt = pending.get(signature) ?? { key: newIdempotencyKey(), request: null }
+    if (attempt.request) return attempt.request
 
-    try {
-      const result = await submit(payload, key)
-      pendingKeys.delete(signature)
-      return result
-    } catch (error) {
-      if (error instanceof BusinessResponseError && rejectionCodes.has(error.code)) {
-        pendingKeys.delete(signature)
-      }
-      throw error
-    }
+    pending.set(signature, attempt)
+    attempt.request = Promise.resolve()
+      .then(() => submit(payload, user, attempt.key))
+      .then(result => {
+        pending.delete(signature)
+        return result
+      })
+      .catch(error => {
+        if (error instanceof BusinessResponseError && rejectionCodes.has(error.code)) pending.delete(signature)
+        throw error
+      })
+      .finally(() => {
+        attempt.request = null
+      })
+    return attempt.request
   }
 }

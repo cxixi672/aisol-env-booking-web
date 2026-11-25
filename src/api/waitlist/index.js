@@ -1,14 +1,11 @@
 import { useAxios } from '@/api/fetch'
 
-export function listWaitlist(params) {
-  return useAxios({ url: '/waitlist', method: 'GET', params })
+/** Load records for an environment and UTC interval as the selected user. */
+export function listWaitlist(data, user, signal) {
+  return useAxios({ url: '/waitlist/list', data, user, signal })
 }
 
-export function createWaitlist(data, key) {
-  return useAxios({
-    url: '/waitlist',
-    method: 'POST',
-    headers: { 'Idempotency-Key': key },
-    data,
-  })
+/** Create a record with the key assigned to this user and interval. */
+export function createWaitlist(data, user, key) {
+  return useAxios({ url: '/waitlist/create', data, user, key })
 }

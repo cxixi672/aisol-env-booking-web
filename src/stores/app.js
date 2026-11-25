@@ -1,12 +1,10 @@
 import { defineStore } from 'pinia'
-
-export const environments = ['env-a', 'env-b']
-export const users = ['alice', 'bob', 'carol', 'admin']
+import { cacheKey, environments, users } from '@/config'
 
 export const useAppStore = defineStore('app', {
   state: () => {
-    const env = sessionStorage.getItem('booking.env')
-    const user = sessionStorage.getItem('booking.user')
+    const env = sessionStorage.getItem(`${cacheKey}.env`)
+    const user = sessionStorage.getItem(`${cacheKey}.user`)
     return {
       dark: false,
       env: environments.includes(env) ? env : environments[0],
@@ -16,11 +14,11 @@ export const useAppStore = defineStore('app', {
   actions: {
     setEnv(env) {
       this.env = env
-      sessionStorage.setItem('booking.env', env)
+      sessionStorage.setItem(`${cacheKey}.env`, env)
     },
     setUser(user) {
       this.user = user
-      sessionStorage.setItem('booking.user', user)
+      sessionStorage.setItem(`${cacheKey}.user`, user)
     },
   },
 })

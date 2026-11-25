@@ -11,7 +11,9 @@
     "dev": "vite",
     "build:only": "vite build",
     "build": "vite build && node scripts/build-zip.js",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "start": "vite",
+    "lint": "eslint . --max-warnings 0"
   },
   "dependencies": {
     "ant-design-vue": "4.2.6",
@@ -22,7 +24,10 @@
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "5.2.4",
-    "vite": "6.4.3",
-    "sass-embedded": "1.100.0"
+    "eslint": "9.39.4",
+    "eslint-plugin-vue": "10.6.2",
+    "globals": "16.5.0",
+    "sass-embedded": "1.100.0",
+    "vite": "6.4.3"
   }
 }

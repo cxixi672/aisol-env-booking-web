@@ -1,7 +1,6 @@
 import axios from 'axios'
-import { useAppStore } from '@/stores/app'
 
-const client = axios.create({ baseURL: import.meta.env.VITE_API_PREFIX || '/api', timeout: 30000 })
+const client = axios.create({ baseURL: import.meta.env.APP_API_PREFIX, timeout: 30000 })
 
 export class BusinessResponseError extends Error {
   constructor(code, desc) {
@@ -19,7 +18,15 @@ client.interceptors.response.use(response => {
   throw new BusinessResponseError(result.code, result.desc)
 })
 
-export const useAxios = config => client.request({
-  ...config,
-  headers: { 'X-User': useAppStore().user, ...config.headers },
-})
+export function useAxios({ url, data, user, key, signal }) {
+  const headers = { 'X-User': user, 'Content-Type': 'application/json' }
+  if (key) headers['Idempotency-Key'] = key
+  return client.post(url, data, { headers, signal })
+}
+
+export function decimalIdBody(id) {
+  // The server returns int64 IDs as strings. Keep every digit in the JSON number.
+  const digits = String(id)
+  if (!/^[1-9][0-9]*$/.test(digits)) throw new Error('记录编号无效')
+  return digits
+}

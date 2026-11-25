@@ -1,25 +1,31 @@
-<script setup>
-import { environments, users, useAppStore } from '@/stores/app'
-import { pages } from '@/router/pages'
+<script>
+import { mapStores } from 'pinia'
+import { environments, siteName, users } from '@/config'
+import { useAppStore } from '@/stores/app'
+import { pages } from '@/router/routes'
 
-const app = useAppStore()
+export default {
+  name: 'BaseTopSide',
+  data: () => ({ environments, pages, siteName, users }),
+  computed: mapStores(useAppStore),
+}
 </script>
 
 <template>
   <a-layout class="app-layout">
     <header class="app-header">
       <div class="header-inner">
-        <router-link :to="{ name: 'Bookings' }" class="brand">共享联调环境预约台</router-link>
+        <router-link :to="{ name: 'Bookings' }" class="brand">{{ siteName }}</router-link>
         <div class="context-selectors">
           <label>
             环境
-            <select id="booking-env" :value="app.env" @change="app.setEnv($event.target.value)">
+            <select id="booking-env" :value="appStore.env" @change="appStore.setEnv($event.target.value)">
               <option v-for="env in environments" :key="env" :value="env">{{ env }}</option>
             </select>
           </label>
           <label>
             当前身份
-            <select id="booking-user" :value="app.user" @change="app.setUser($event.target.value)">
+            <select id="booking-user" :value="appStore.user" @change="appStore.setUser($event.target.value)">
               <option v-for="user in users" :key="user" :value="user">{{ user }}</option>
             </select>
           </label>
@@ -39,7 +45,7 @@ const app = useAppStore()
   </a-layout>
 </template>
 
-<style scoped>
+<style lang="scss" scoped>
 .header-inner, .nav-inner {
   width: min(100%, 72rem);
   margin-inline: auto;
